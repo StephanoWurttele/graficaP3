@@ -289,7 +289,7 @@ void joinLevels(){
     std::cout << "curr other: "; curr_other->print();
     if(((curr_origin == init_origin && curr_other == init_other) || (curr_origin == init_other && curr_other == init_origin)) && triangles.size() > 0) break;
     buildTriangle();
-    std::cout << "===============" << triangles.size() << "\n";
+    std::cout << "=============== Triangles size" << triangles.size() << "\n";
     std::cout << "Curr origin: "; curr_origin->print();
     std::cout << "Curr other: "; curr_other->print();
     //cin >> ex;
@@ -298,62 +298,31 @@ void joinLevels(){
 
 void renderQuad()
 {
+  triangles.clear();
   ifstream coords("../coords.txt");
   getSlice(coords, this_level);
   getSlice(coords, next_level);
   std::cout << this_level->size() << "\n";
   std::cout << next_level->size() << "\n";
   joinLevels();
+  cout << "!!!!!!!!!!!!!!!!!!!!!Levels joined, rendering!!!!!!!!!!!!!!!!!!\n";
+  //cleanup();
+  //exit(0);
     if (quadVAO == 0)
     {
-      std::cout << "in if" << "\n";
-      Triangle t = triangles[0];
       vector<float> vertices;
-      // positions
-        /* glm::vec3 pos1 = t.origin->position;
-        glm::vec3 pos2 = t.other->position;
-        glm::vec3 pos3 = t.third->position;
-        // texture coordinates
-        glm::vec2 uv1(0.0f, 1.0f);
-        glm::vec2 uv2(0.0f, 0.0f);
-        glm::vec2 uv3(1.0f, 0.0f);  
-        glm::vec2 uv4(1.0f, 1.0f);
-        // normal vector
-        glm::vec3 nm(0.0f, 0.0f, 1.0f);
-
-        // calculate tangent/bitangent vectors of both triangles
-        glm::vec3 tangent1, bitangent1;
-        glm::vec3 tangent2, bitangent2;
-        // triangle 1
-        // ----------
-        glm::vec3 edge1 = pos2 - pos1;
-        glm::vec3 edge2 = pos3 - pos1;
-        glm::vec2 deltaUV1 = uv2 - uv1;
-        glm::vec2 deltaUV2 = uv3 - uv1;
-
-        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
-        tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-        tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-        tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-
-        bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-        bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-        bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-        */
-
-      float quadVertices[] = {
-            // positions                                 // normal               // texcoords      // tangent                             // bitangent
-            t.origin->x(), t.origin->y(), t.origin->z(), t.nm.x, t.nm.y, t.nm.z, t.uv1.x, t.uv1.y, t.tangent.x, t.tangent.y, t.tangent.z, t.bitangent.x, t.bitangent.y, t.bitangent.z,
-            t.other->x(), t.other->y(), t.other->z(), t.nm.x, t.nm.y, t.nm.z, t.uv2.x, t.uv2.y, t.tangent.x, t.tangent.y, t.tangent.z, t.bitangent.x, t.bitangent.y, t.bitangent.z,
-            t.third->x(), t.third->y(), t.third->z(), t.nm.x, t.nm.y, t.nm.z, t.uv3.x, t.uv3.y, t.tangent.x, t.tangent.y, t.tangent.z, t.bitangent.x, t.bitangent.y, t.bitangent.z,
-        };
+      for(auto& it: triangles) it.insertObject(vertices);
+      std::cout << vertices.size() << "\n";
+      std::cout << triangles.size() << "\n";
+      float* quadVertices =  &vertices[0];
+      int asd;
+      cin >> asd;
         // configure plane VAO
           glGenVertexArrays(1, &quadVAO);
           glGenBuffers(1, &quadVBO);
           glBindVertexArray(quadVAO);
           glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-          glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+          glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float), quadVertices, GL_STATIC_DRAW);
           glEnableVertexAttribArray(0);
           glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
           glEnableVertexAttribArray(1);
@@ -366,7 +335,7 @@ void renderQuad()
           glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
     }
     glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 3*triangles.size());
     glBindVertexArray(0);
 }
 

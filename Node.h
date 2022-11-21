@@ -14,6 +14,7 @@ class Node {
      std::cout << position[0] << " " << position[1] << " " << position[2] << "\n";
    }
    void use(){ used = true;}
+   void unuse(){ used = false;}
    float x(){return position.x;};
    float y(){return position.y;};
    float z(){return position.z;};

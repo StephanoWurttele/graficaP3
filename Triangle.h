@@ -55,7 +55,6 @@ class Triangle {
       insertNormal(vec);
       vec.push_back(uv1.x);
       vec.push_back(uv1.y);
-      vec.push_back(uv1.z);
       insertTangent(vec);
       insertBitangent(vec);
     }
@@ -66,7 +65,6 @@ class Triangle {
       insertNormal(vec);
       vec.push_back(uv2.x);
       vec.push_back(uv2.y);
-      vec.push_back(uv2.z);
       insertTangent(vec);
       insertBitangent(vec);
     }
@@ -77,13 +75,15 @@ class Triangle {
       insertNormal(vec);
       vec.push_back(uv3.x);
       vec.push_back(uv3.y);
-      vec.push_back(uv3.z);
       insertTangent(vec);
       insertBitangent(vec);
     }
     void insertObject(vector<float> &vec){
       insertOrigin(vec);
+      origin->unuse();
       insertOther(vec);
+      other->unuse();
       insertThird(vec);
+      third->unuse();
     }
 };
