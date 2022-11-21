@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.19)
+project(NM)
+
+set(CMAKE_CXX_STANDARD 20)
+
+#add_executable(LearnOpenGL basic_lighting_specular.cpp glad.c shader_m.h stb_image.h stb_image.cpp)
+#add_executable(LearnOpenGL geometry_shader_houses.cpp glad.c shader.h stb_image.h stb_image.cpp)
+# add_executable(LearnOpenGL shadow_mapping_base.cpp stb_image.h glad.c stb_image.cpp)
+# add_executable(NM normal_mapping.cpp glad.c shader.h stb_image.h stb_image.cpp)
+add_executable(NM test_mapping.cpp glad.c shader.h stb_image.h stb_image.cpp)
+#add_executable(LearnOpenGL model_loading.cpp glad.c shader_m.h stb_image.h stb_image.cpp)
+find_package(GLEW REQUIRED)
+find_package(GLUT REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+target_link_libraries(NM OpenGL::GL GLUT::GLUT GLEW::GLEW glfw ${CMAKE_DL_LIBS})
