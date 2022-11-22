@@ -30,7 +30,7 @@
     const unsigned int SCR_HEIGHT = 600;
 
   // camera
-    Camera camera(glm::vec3(20.0f, 30.0f, 15.0f));
+    Camera camera(glm::vec3(30.0f, 30.0f, 80.0f));
     float lastX = (float)SCR_WIDTH / 2.0;
     float lastY = (float)SCR_HEIGHT / 2.0;
     bool firstMouse = true;
@@ -69,7 +69,7 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
 
     // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -165,6 +165,7 @@ int main()
   vector<Node*>* this_level = nullptr;
   vector<Node*>* next_level = nullptr;
   vector<Node*> nodes = {};
+  vector<float> vertices;
   vector<Triangle*> triangles = {};
   Node *curr_origin = nullptr;
   Node *curr_other = nullptr;
@@ -173,42 +174,20 @@ int main()
   Node *third = nullptr;
   Node *init_origin = nullptr;
   Node *init_other = nullptr;
-  vector<float> vertices;
 
 void cleanup_vector(vector<Node*> &vec){
-  std::cout << "cleaning up nodes\n";
   for(auto& it : vec){
     delete it;
   }
-  std::cout << "done cleaning up nodes\n";
 }
-
 void cleanup_triangles(){
-  std::cout << "cleaning up triangles\n";
   for(auto& it : triangles){
     delete it;
   }
-  std::cout << "done cleaning up triangles\n";
 }
-
 void cleanup(){
-  std::cout << "about to cleanup\n";
-  /*
-  //std::cout << "Curr address " << curr_origin << " " << &curr_origin << "\n";
-  delete &curr_origin;
-  //std::cout << "Curr address " << curr_origin << " " << &curr_origin << "\n";
-  //std::cout << "curr_origin deleted\n";
-  delete curr_other;
-  //std::cout << "curr_other deleted\n";
-  //std::cout << "Address " << next_origin << " " << &next_origin << "\n";
-  //delete next_origin;
-  //std::cout << "next_origin deleted\n";
-  delete next_other;
-  //std::cout << "next_other deleted\n";*/
-  //delete this_level;
   cleanup_triangles();
   cleanup_vector(nodes);
-  //cleanup_vector(this_level);
   delete this_level;
   delete next_level;
   this_level = nullptr;
@@ -222,201 +201,97 @@ void cleanup(){
   third = nullptr;
   init_origin = nullptr;
   init_other = nullptr;
-  //std::cout << "this_level deleted\n";
-  //cleanup_vector(next_level);
-  //std::cout << "next_level deleted\n";
-  std::cout << "cleanup done\n";
 }
-
 void getSlice(ifstream &coords, vector<Node*>* &slice){
-  std::cout << "*****************************Getting slice**********************************\n";
+  //std::cout << "****************Getting slice*******************\n";
   slice = new vector<Node*>;
   Node* prev = nullptr;
+  int xtemp = 0;
   while(true){
     //std::cout << "\n/// Reading coords ///\n";
     getline(coords, coordX);
-    //std::cout << "Coord X: " << coordX;
     if(coordX == "===") break;
     getline(coords, coordY);
     getline(coords, coordZ);
-    //std::cout << ", Coord Y: " << coordY << ", Coord Z: " << coordZ << "\n";
     x = std::stof(coordX);
     y = std::stof(coordY);
     z = std::stof(coordZ);
     nodes.push_back(new Node(x,y,z));
     slice->push_back(nodes[nodes.size()-1]);
   }
-	std::cout << "X: " << x << ", Y: " << y << ", Z: " << z << std::endl;
-  int x = 0;
+	//std::cout << "X: " << x << ", Y: " << y << ", Z: " << z << std::endl;
   for(auto& it : *slice){
-    if(x+1 == slice->size()) break;
-    //std::cout<<"-------\n" << &((*slice)[x]) << "\n";
-    //std::cout << &it << "\n";
-    //(&it)->print();
-    (*slice)[x]->next = (*slice)[x+1];
-    x += 1; 
+    if(xtemp+1 == slice->size()) break;
+    (*slice)[xtemp]->next = (*slice)[xtemp+1];
+    xtemp += 1; 
   }
   (*slice)[slice->size()-1]->next = (*slice)[0];
-  //std::cout << "**********\n";
-  //for(auto& it : *slice){
-    //(&it)->print();
-    //(&it)->next->print();
-    //x += 1; 
-  //}
-  //std::cout << "**********\n";
 };
-/*
-    1. curr_same = init_node
-    2. curr_other = mas cercano a curr_same de la otra capa
-    2.1. init_other = curr_other
-    # Empieza algoritmo
-    3. Nodo más cercano a curr_same = next_same
-    4. Nodo más cercano a curr_other = next_other
-    5. Diagonal más pequeña entre (next_other -> curr_same) y (next_same -> curr_other) queda
-    6. Dibujar triangulo
-    7. curr_same = punta de llegada de diagonal
-    8. curr_other = punta de salida
-    Clausula de escape if ambos esan en current
- */
 void getClosestNode(Node* &origin, vector<Node*>* &opposite, Node* &closest){
   float minDist = 500.0;
   Node* temp = &(*closest);
-  //std::cout << "GETTING CLOSEST\n";
-  //std::cout << opposite << "\n";
   for(auto& it : *opposite){
-    // if(it.used) continue;
     auto distance = glm::length(origin->position - it->position);
-    //std::cout << "Comparing ";
-    //it.print();
-    // if(minDist <= distance) continue;
     if(minDist <= distance || it == origin) continue;
     minDist = distance;
     closest = it;
-    // //std::cout << "Curr closest is ";
-    //closest->print();
   }
-  /*if(temp == closest){
-    //std::cout << "temp is equal to closest\n";
-    if(origin->position[2] == init_other->position[2]) closest = init_other;
-    else closest = init_origin;
-  }*/
 }
 void buildTriangle(){
-  std::cout << "BUILDING TRIANGLE\n";
-  //getClosestNode(curr_origin, this_level, next_origin);
-  //std::cout << "next origin: "; next_origin->print();
-  //getClosestNode(curr_other, next_level, next_other);
-  std::cout << "next origin: "; next_origin->print();
   int alv;
-  std::cout << "next other: "; next_other->print();
-  curr_other->print();
-  std::cout << bool(curr_origin->used == true) << " " << bool(curr_other->used == true) << "\n";
   auto distance_from_origin = glm::length(next_other->position - curr_origin->position);
   auto distance_from_other = glm::length(next_origin->position - curr_other->position);
-  if(curr_origin->z() == 15.5 || curr_other->z() == 15.5){
-    std::cout << curr_origin << " " << init_origin << "\n";
-    curr_origin->print();
-    std::cout << curr_origin->x() << " " << curr_origin->y() << "\n";
-    std::cout << (curr_origin->x() == 28.4) << (curr_origin->y() == 29.3);
-    cin >> alv;
-  }
-  if(curr_origin->x() == 29.2 && curr_origin->y() == 27.9){
-    std::cout << curr_origin << " " << init_origin << "\n";
-    cin >>alv;
-  }
-  if (curr_origin==init_origin && curr_origin->used) distance_from_origin = 500;
-  if (curr_other==init_origin && curr_other->used) distance_from_other = 500;
-  if (curr_other==init_other && curr_other->used) distance_from_other = 500;
-  if (curr_origin==init_other && curr_origin->used) distance_from_origin = 500;
-  std::cout << "comparing from origin " << distance_from_origin << " vs from other " << distance_from_other << "\n";
+  if (curr_origin==init_origin && curr_origin->used) distance_from_other = 500;
+  if (curr_other==init_other && curr_other->used) distance_from_origin = 500;
   if(distance_from_origin <= distance_from_other){
     third = next_other;
     triangles.push_back(new Triangle(curr_origin, curr_other, third));
-    curr_other = curr_origin;
-    vector<Node*>* temp = next_level;
-    next_level = this_level;
-    this_level = temp;
+    curr_other->use();
+    curr_other = next_other;
   }
   else{
     third = next_origin;
     triangles.push_back(new Triangle(curr_origin, curr_other, third));
+    curr_origin->use();
+    curr_origin = next_origin;
   }
-  curr_origin = third;
-  std::cout << "Chosen as third: "; third->print();
+  //std::cout << "Chosen as third: "; third->print();
 }
 
 void joinLevels(){
   curr_origin = (*this_level)[0];
-  std::cout << "ORIGIN IS "; curr_origin->print();
   getClosestNode(curr_origin, next_level, curr_other);
   init_origin = curr_origin;
   init_other = curr_other;
-  std::cout << "CHOSEN AS CLOSEST OTHER "; curr_other->print();
-  std::cout << "Joining levels\n";
   int rounds = 0;int x;
-  //((*next_level)[0]).print();
   do{
-    std::cout << "================================\n";
-    std::cout << "curr origin: "; curr_origin->print();
-    //std::cout << triangles.size() << "\n";
-    std::cout << "curr other: "; curr_other->print();
-    std::cout << "Initial curr origin: "; init_origin->print();
-    std::cout << "Initial curr other: "; init_other->print();
-    //if(curr_origin != init_origin || rounds == 0)
-      next_origin = curr_origin->next;
-    //else next_origin = curr_origin;
-    //if(curr_other != init_other || rounds == 0)
-      next_other = curr_other->next;
-    //else next_other = curr_other;
+    next_origin = curr_origin->next;
+    next_other = curr_other->next;
     buildTriangle();
-    if(((curr_origin == init_origin && curr_other == init_other) || (curr_origin == init_other && curr_other == init_origin)) && rounds != 0) break;
-    if(((curr_origin == init_origin && curr_other == init_other) || (curr_origin == init_other && curr_other == init_origin)) && triangles.size() > 0) {
-      std::cout << "in if\n";
-      cin >> x;
-      break;
-    }
-    std::cout << "ASdasda;sldaskDJLASDJA" << curr_origin->z() << " " << curr_other->z() <<"\n";
-    //cin >> x;
-    //cin.ignore();
-    if(curr_origin->z() == 15.5 || curr_other->z() == 15.5){
-      //std::cout<<"este cin\n";
-      //cin >> x;
-    }
-    //std::cout << "=============== Triangles size" << triangles.size() << "\n";
-    //std::cout << "Curr origin: "; curr_origin->print();
-    //std::cout << "Curr other: "; curr_other->print();
+    if(((curr_origin == init_origin && curr_other == init_other)) && rounds != 0) break;
     rounds += 1;
   }while(true);
 }
 
 void renderQuad()
 {
-  std::cout << "Entering renderQuad\n";
+  //std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!Entering renderQuad!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   cleanup();
   vertices.clear();
   ifstream coords("../coords3.txt");
-  //coords.seekg(0, ios::beg);
   int slice = 1;
+  int xtemp = 0;
   getSlice(coords, next_level);
   while(coords.peek() != EOF){
     ++slice;
-    //std::cout << "in while\n";
-    //std::cout << "Peek:" << coords.peek() << "\n";
     delete this_level;
     this_level = next_level;
-    //std::cout << "\nAddresses are " << this_level << " " << next_level << "\n";
     getSlice(coords, next_level);
-    std::cout << "Slices gotten\n";
-    //std::cout << "\nAddresses are " << this_level << " " << next_level << "\n";
-    std::cout << this_level->size() << " " << next_level->size() << "\n";
+    //std::cout <<"Levels sizes: " << this_level->size() << " " << next_level->size() << "\n";
     joinLevels();
     for(auto& it: triangles) it->insertObject(vertices);
-		std::cout << vertices.size() << "\n";
-		std::cout << triangles.size() << "\n";
-    std::cout << "Peeking: " << coords.peek() << " after slices " << slice-1 << " and " << slice << "\n";
   }
-	//int x; cin >> x;
-  std::cout << "######################### Levels joined, rendering #############################\n";
+  //std::cout << "######################### Levels joined, rendering #############################\n";
     if (quadVAO == 0)
     {
       float* quadVertices =  &vertices[0];
@@ -438,7 +313,10 @@ void renderQuad()
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
     }
     glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3*triangles.size());
+    std::cout << "Triangles size for render: " << triangles.size() << "\n";
+    std::cout << "Vertices  size for render: " << vertices.size() << "\n";
+    std::cout << "--------------------------\n";
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size()/14);
     glBindVertexArray(0);
 }
 

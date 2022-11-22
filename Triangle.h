@@ -11,7 +11,7 @@ class Triangle {
     Triangle(Node* _origin, Node* _other, Node* _third){
       origin = _origin; other = _other; third = _third;
       uv1 = glm::vec2(0.0f, 1.0f); uv2 = glm::vec2(0.0f, 0.0f); uv3 = glm::vec2(1.0f, 0.0f);
-      origin->use(); other->use(); third->use();
+      // origin->use(); other->use(); third->use();
 
       edge1 = other->position - origin->position;
       edge2 = third->position - origin->position;
