@@ -30,7 +30,7 @@
     const unsigned int SCR_HEIGHT = 600;
 
   // camera
-    Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+    Camera camera(glm::vec3(30.0f, 30.0f, 80.0f));
     float lastX = (float)SCR_WIDTH / 2.0;
     float lastY = (float)SCR_HEIGHT / 2.0;
     bool firstMouse = true;
@@ -59,7 +59,7 @@ int main()
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
     {
-        std::cout << "Failed to create GLFW window" << std::endl;
+        //std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
@@ -69,13 +69,13 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
 
     // tell GLFW to capture our mouse
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+        //std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
@@ -162,9 +162,11 @@ int main()
 // triangulation build
   string coordX, coordY, coordZ;
   float x, y, z;
-  vector<Node>* this_level = new vector<Node>;
-  vector<Node>* next_level = new vector<Node>;
-  vector<Triangle> triangles = {};
+  vector<Node*>* this_level = nullptr;
+  vector<Node*>* next_level = nullptr;
+  vector<Node*> nodes = {};
+  vector<float> vertices;
+  vector<Triangle*> triangles = {};
   Node *curr_origin = nullptr;
   Node *curr_other = nullptr;
   Node *next_origin = nullptr;
@@ -172,170 +174,149 @@ int main()
   Node *third = nullptr;
   Node *init_origin = nullptr;
   Node *init_other = nullptr;
-void cleanup(){
-  std::cout << "about to cleanup\n";
-  /*
-  std::cout << "Curr address " << curr_origin << " " << &curr_origin << "\n";
-  delete &curr_origin;
-  std::cout << "Curr address " << curr_origin << " " << &curr_origin << "\n";
-  std::cout << "curr_origin deleted\n";
-  delete curr_other;
-  std::cout << "curr_other deleted\n";
-  std::cout << "Address " << next_origin << " " << &next_origin << "\n";
-  //delete next_origin;
-  std::cout << "next_origin deleted\n";
-  delete next_other;
-  std::cout << "next_other deleted\n";*/
-  delete this_level;
-  std::cout << "this_level deleted\n";
-  delete next_level;
-  std::cout << "next_level deleted\n";
-  std::cout << "cleanup done\n";
-}
-/*glm::vec3 getPoint(){
-  getline(coords2, coordX);
-  getline(coords2, coordY);
-  getline(coords2, coordZ);
-  std::cout << coordX << " " << coordY << " " << coordZ << "\n";
-  x = std::stof(coordX);
-  y = std::stof(coordY);
-  z = std::stof(coordZ);
-  return glm::vec3(x,y,z);
-}*/
 
-void getSlice(ifstream &coords, vector<Node>* slice){
-  std::cout << "Getting slice\n";
-  slice->clear();
+void cleanup_vector(vector<Node*> &vec){
+  for(auto& it : vec){
+    delete it;
+  }
+}
+void cleanup_triangles(){
+  for(auto& it : triangles){
+    delete it;
+  }
+}
+void cleanup(){
+  cleanup_triangles();
+  cleanup_vector(nodes);
+  delete this_level;
+  delete next_level;
+  this_level = nullptr;
+  next_level = nullptr;
+  nodes = {};
+  triangles = {};
+  curr_origin = nullptr;
+  curr_other = nullptr;
+  next_origin = nullptr;
+  next_other = nullptr;
+  third = nullptr;
+  init_origin = nullptr;
+  init_other = nullptr;
+}
+void getSlice(ifstream &coords, vector<Node*>* &slice){
+  //std::cout << "****************Getting slice*******************\n";
+  slice = new vector<Node*>;
+  Node* prev = nullptr;
+  int xtemp = 0;
   while(true){
+    //std::cout << "\n/// Reading coords ///\n";
     getline(coords, coordX);
     if(coordX == "===") break;
     getline(coords, coordY);
     getline(coords, coordZ);
-    std::cout << coordX << " " << coordY << " " << coordZ << "\n";
     x = std::stof(coordX);
     y = std::stof(coordY);
     z = std::stof(coordZ);
-    std::cout << x << " " << y << " " << z << std::endl;
-    slice->push_back(Node(x,y,z));
+    nodes.push_back(new Node(x,y,z));
+    slice->push_back(nodes[nodes.size()-1]);
   }
+	//std::cout << "X: " << x << ", Y: " << y << ", Z: " << z << std::endl;
+  for(auto& it : *slice){
+    if(xtemp+1 == slice->size()) break;
+    (*slice)[xtemp]->next = (*slice)[xtemp+1];
+    xtemp += 1; 
+  }
+  (*slice)[slice->size()-1]->next = (*slice)[0];
 };
-/*
-    1. curr_same = init_node
-    2. curr_other = mas cercano a curr_same de la otra capa
-    2.1. init_other = curr_other
-    # Empieza algoritmo
-    3. Nodo más cercano a curr_same = next_same
-    4. Nodo más cercano a curr_other = next_other
-    5. Diagonal más pequeña entre (next_other -> curr_same) y (next_same -> curr_other) queda
-    6. Dibujar triangulo
-    7. curr_same = punta de llegada de diagonal
-    8. curr_other = punta de salida
-    Clausula de escape if ambos esan en current
- */
-void getClosestNode(Node* origin, vector<Node>* opposite, Node* &closest){
+void getClosestNode(Node* &origin, vector<Node*>* &opposite, Node* &closest){
   float minDist = 500.0;
-  Node* temp = closest;
+  Node* temp = &(*closest);
   for(auto& it : *opposite){
-    if(it.used) continue;
-    auto distance = glm::length(origin->position - it.position);
-    //std::cout << &it << "\n";
-    // if(minDist <= distance) continue;
-    if(minDist <= distance || &it == origin) continue;
+    auto distance = glm::length(origin->position - it->position);
+    if(minDist <= distance || it == origin) continue;
     minDist = distance;
-    closest = &it;
-  }
-  if(temp == closest){
-    std::cout << "temp is equal to closest\n";
-    if(origin->position[2] == init_other->position[2]) closest = init_other;
-    else closest = init_origin;
+    closest = it;
   }
 }
 void buildTriangle(){
-  std::cout << "BUILDING TRIANGLE\n";
-  getClosestNode(curr_origin, this_level, next_origin);
-  std::cout << "next origin: "; next_origin->print();
-  getClosestNode(curr_other, next_level, next_other);
-  std::cout << "next other: "; next_other->print();
+  int alv;
   auto distance_from_origin = glm::length(next_other->position - curr_origin->position);
   auto distance_from_other = glm::length(next_origin->position - curr_other->position);
+  if (curr_origin==init_origin && curr_origin->used) distance_from_other = 500;
+  if (curr_other==init_other && curr_other->used) distance_from_origin = 500;
   if(distance_from_origin <= distance_from_other){
     third = next_other;
-    triangles.emplace_back(Triangle(curr_origin, curr_other, third));
-    curr_other = curr_origin;
-    vector<Node>* temp = next_level;
-    next_level = this_level;
-    this_level = temp;
+    triangles.push_back(new Triangle(curr_origin, curr_other, third));
+    curr_other->use();
+    curr_other = next_other;
   }
   else{
     third = next_origin;
-    triangles.emplace_back(Triangle(curr_origin, curr_other, third));
+    triangles.push_back(new Triangle(curr_origin, curr_other, third));
+    curr_origin->use();
+    curr_origin = next_origin;
   }
-  curr_origin = third;
-  std::cout << "Chosen as third: ";
-  third->print();
+  //std::cout << "Chosen as third: "; third->print();
 }
 
 void joinLevels(){
-  curr_origin = &((*this_level)[0]);
+  curr_origin = (*this_level)[0];
   getClosestNode(curr_origin, next_level, curr_other);
   init_origin = curr_origin;
   init_other = curr_other;
-  std::cout << "Joining levels\n";
-  //((*next_level)[0]).print();
-  int ex = 0;
-  while(true){
-    std::cout << "================================\n";
-    std::cout << "Initial curr origin: "; curr_origin->print();
-    std::cout << "curr other: "; curr_other->print();
-    if(((curr_origin == init_origin && curr_other == init_other) || (curr_origin == init_other && curr_other == init_origin)) && triangles.size() > 0) break;
+  int rounds = 0;int x;
+  do{
+    next_origin = curr_origin->next;
+    next_other = curr_other->next;
     buildTriangle();
-    std::cout << "=============== Triangles size" << triangles.size() << "\n";
-    std::cout << "Curr origin: "; curr_origin->print();
-    std::cout << "Curr other: "; curr_other->print();
-    //cin >> ex;
-  }
+    if(((curr_origin == init_origin && curr_other == init_other)) && rounds != 0) break;
+    rounds += 1;
+  }while(true);
 }
 
 void renderQuad()
 {
-  triangles.clear();
-  ifstream coords("../coords.txt");
-  getSlice(coords, this_level);
+  //std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!Entering renderQuad!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  cleanup();
+  vertices.clear();
+  ifstream coords("../coords3.txt");
+  int slice = 1;
+  int xtemp = 0;
   getSlice(coords, next_level);
-  std::cout << this_level->size() << "\n";
-  std::cout << next_level->size() << "\n";
-  joinLevels();
-  cout << "!!!!!!!!!!!!!!!!!!!!!Levels joined, rendering!!!!!!!!!!!!!!!!!!\n";
-  //cleanup();
-  //exit(0);
+  while(coords.peek() != EOF){
+    ++slice;
+    delete this_level;
+    this_level = next_level;
+    getSlice(coords, next_level);
+    //std::cout <<"Levels sizes: " << this_level->size() << " " << next_level->size() << "\n";
+    joinLevels();
+    for(auto& it: triangles) it->insertObject(vertices);
+  }
+  //std::cout << "######################### Levels joined, rendering #############################\n";
     if (quadVAO == 0)
     {
-      vector<float> vertices;
-      for(auto& it: triangles) it.insertObject(vertices);
-      std::cout << vertices.size() << "\n";
-      std::cout << triangles.size() << "\n";
       float* quadVertices =  &vertices[0];
-      int asd;
-      cin >> asd;
-        // configure plane VAO
-          glGenVertexArrays(1, &quadVAO);
-          glGenBuffers(1, &quadVBO);
-          glBindVertexArray(quadVAO);
-          glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-          glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float), quadVertices, GL_STATIC_DRAW);
-          glEnableVertexAttribArray(0);
-          glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
-          glEnableVertexAttribArray(1);
-          glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
-          glEnableVertexAttribArray(2);
-          glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
-          glEnableVertexAttribArray(3);
-          glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
-          glEnableVertexAttribArray(4);
-          glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+      // configure plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float), quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
     }
     glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3*triangles.size());
+    std::cout << "Triangles size for render: " << triangles.size() << "\n";
+    std::cout << "Vertices  size for render: " << vertices.size() << "\n";
+    std::cout << "--------------------------\n";
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size()/14);
     glBindVertexArray(0);
 }
 
@@ -426,7 +407,7 @@ unsigned int loadTexture(char const * path)
     }
     else
     {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
+        //std::cout << "Texture failed to load at path: " << path << std::endl;
         stbi_image_free(data);
     }
 

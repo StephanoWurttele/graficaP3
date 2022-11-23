@@ -6,12 +6,14 @@ class Node {
   public:
    glm::vec3 position;
    bool used;
+   Node* next;
    Node(){};
    Node(float x, float y, float z){
      position = glm::vec3(x,y,z);
+     used = false;
    }
    void print(){
-     std::cout << position[0] << " " << position[1] << " " << position[2] << "\n";
+     std::cout << "(" << position[0] << " " << position[1] << " " << position[2] << ")\n";
    }
    void use(){ used = true;}
    void unuse(){ used = false;}
