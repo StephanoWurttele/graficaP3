@@ -29,7 +29,7 @@ def get_initial(seg):
             if(seg[y][x] == 100): return [y, x]
 
 def write_ordered(seg, z):
-    if(z==159): return
+    if(z==115 or z==116): return
     y , x = get_initial(seg)
     while(True):
         write_point(x,y,z)
