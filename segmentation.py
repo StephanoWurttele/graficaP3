@@ -6,7 +6,7 @@ f = open("coords.txt", "a")
 def write_point(x,y,z):
     f.write(f"{str(float(x)/10.0)}\n")
     f.write(f"{str(float(y)/10.0)}\n")
-    f.write(f"{str(float(z)/5.0)}\n")
+    f.write(f"{str(float(z)/10.0)}\n")
     
 
 def load_npy(path, segmentation = True):
@@ -29,7 +29,6 @@ def get_initial(seg):
             if(seg[y][x] == 100): return [y, x]
 
 def write_ordered(seg, z):
-    if(z==115 or z==116): return
     y , x = get_initial(seg)
     while(True):
         write_point(x,y,z)
@@ -87,6 +86,7 @@ def get_border_segmentation():
                     found = False
         # f.write("===\n")
     for sheet_id in exists_seg:
+        if(sheet_id==115 or sheet_id==116 or sheet_id==114 or sheet_id==122): continue
         name = str(sheet_id) + ".npy"
         filename=os.path.join(save_path,name)
         np.save(filename, only_border[sheet_id])

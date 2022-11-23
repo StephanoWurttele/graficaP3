@@ -278,7 +278,7 @@ void renderQuad()
   //std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!Entering renderQuad!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   cleanup();
   vertices.clear();
-  ifstream coords("../coords3.txt");
+  ifstream coords("../coords5.txt");
   int slice = 1;
   int xtemp = 0;
   getSlice(coords, next_level);
